@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nicothin">
+  <meta name="theme-color" content="#5BB8F5">
+  <title>Nicothin</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+  <!-- Splash Screen -->
+  <div id="splash" class="screen active">
+    <div class="splash-content">
+      <div class="logo-container">
+        <div class="logo-circle">
+          <span class="logo-letter">N</span>
+        </div>
+      </div>
+      <h1 class="app-name">Nicothin</h1>
+      <p class="app-tagline">Suivez votre consommation de nicotine</p>
+      <div class="splash-loader"></div>
+    </div>
+  </div>
+
+  <!-- Onboarding -->
+  <div id="onboarding" class="screen">
+    <div class="onboarding-container">
+      <div class="onboarding-slides">
+
+        <div class="slide active" data-slide="0">
+          <div class="slide-icon" style="background: rgba(91,184,245,0.12)">
+            <span style="font-size:48px">💙</span>
+          </div>
+          <h2>Bienvenue sur Nicothin</h2>
+          <p>Suivez votre consommation de nicotine jour après jour et prenez conscience de votre santé.</p>
+        </div>
+
+        <div class="slide" data-slide="1">
+          <div class="slide-icon" style="background: rgba(76,175,80,0.12)">
+            <span style="font-size:48px">📊</span>
+          </div>
+          <h2>Un classement chaque semaine</h2>
+          <p>Chaque lundi, recevez votre grade de A à F selon vos tox accumulés. Moins vous consommez, meilleur est votre grade !</p>
+        </div>
+
+        <div class="slide" data-slide="2">
+          <div class="slide-icon" style="background: rgba(255,112,67,0.12)">
+            <span style="font-size:48px">🏥</span>
+          </div>
+          <h2>Prenez soin de vous</h2>
+          <p>Des informations médicales claires et adaptées à votre niveau de consommation.</p>
+        </div>
+
+        <div class="slide" data-slide="3">
+          <div class="slide-icon" style="background: rgba(91,184,245,0.12)">
+            <span style="font-size:48px">👤</span>
+          </div>
+          <h2>Comment vous appelez-vous ?</h2>
+          <p>Votre prénom apparaîtra sur votre profil.</p>
+          <input type="text" id="onboarding-name" placeholder="Votre prénom" class="name-input">
+        </div>
+
+      </div>
+
+      <!-- Indicateurs -->
+      <div class="slide-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+
+      <button id="onboarding-next" class="btn-primary">Suivant</button>
+      <button id="onboarding-skip" class="btn-skip">Passer</button>
+    </div>
+  </div>
+
+  <!-- App principale -->
+  <div id="app" class="screen">
+
+    <!-- Contenu des écrans -->
+    <div id="screen-home" class="app-screen active"></div>
+    <div id="screen-ranking" class="app-screen"></div>
+    <div id="screen-profile" class="app-screen"></div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-screen="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Mon espace</span>
+      </button>
+      <button class="nav-btn" data-screen="ranking">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span>Classement</span>
+      </button>
+      <button class="nav-btn" data-screen="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>Profil</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
