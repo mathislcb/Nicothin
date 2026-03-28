@@ -13,7 +13,7 @@ const state = {
   selectedDay: new Date().toISOString().split('T')[0],
   userName: DB.get('userName', 'Utilisateur'),
   onboardingDone: DB.get('onboardingDone', false),
-  entries: DB.get('entries', []), // { date, cigarettes, puffMg, id }
+  entries: DB.get('entries', []),
 };
 
 // ===== UTILS =====
@@ -152,7 +152,6 @@ function renderHome() {
       <div class="page-title">Mon espace</div>
     </div>
 
-    <!-- Barre des 7 jours -->
     <div class="week-bar">
       ${weekDays.map((d, i) => `
         <button class="day-btn ${d === state.selectedDay ? 'active' : ''} ${isFuture(d) ? 'future' : ''}"
@@ -166,7 +165,6 @@ function renderHome() {
       `).join('')}
     </div>
 
-    <!-- Card consommation -->
     <div class="card" style="margin-top:16px">
       <div class="card-row">
         <span class="card-title">Consommation nicotine</span>
@@ -199,7 +197,6 @@ function renderHome() {
       </div>
     </div>
 
-    <!-- Bouton stats -->
     <button class="feature-btn" onclick="alert('Stats — bientôt !')">
       <span>📊</span> Voir mes statistiques
       <span class="badge">Premium</span>
@@ -214,8 +211,6 @@ function selectDay(date) {
 }
 
 // ===== MODALS =====
-
-// Ajouter cigarette
 function openAddCigarette() {
   document.body.insertAdjacentHTML('beforeend', `
     <div class="modal-overlay active" id="modal-cig">
@@ -254,7 +249,6 @@ function saveCigarette() {
   renderHome();
 }
 
-// Ajouter puff
 function openAddPuff() {
   document.body.insertAdjacentHTML('beforeend', `
     <div class="modal-overlay active" id="modal-puff">
@@ -304,7 +298,6 @@ function savePuff() {
   renderHome();
 }
 
-// Modifier / supprimer
 function openEditEntries() {
   const dayEntries = state.entries.filter(e => e.date === state.selectedDay);
   const rows = dayEntries.length === 0
@@ -367,7 +360,6 @@ function renderRanking() {
   const monday = new Date(now);
   monday.setDate(now.getDate() - dow);
 
-  // Semaine précédente
   const prevMonday = new Date(monday);
   prevMonday.setDate(monday.getDate() - 7);
   const prevWeekDays = Array.from({ length: 7 }, (_, i) => {
@@ -379,20 +371,13 @@ function renderRanking() {
   const totalTox = getWeekTox(prevWeekDays);
   const score = getScore(totalTox);
   const scoreColor = getScoreColor(score);
+  const hasNoPrevData = state.entries.filter(e => prevWeekDays.includes(e.date)).length === 0;
 
-  // Semaine en cours
-  const currentWeekDays = getWeekDays();
-  const currentTox = getWeekTox(currentWeekDays);
-  const nextScore = getScore(currentTox);
-
-  // Countdown lundi prochain
   const nextMonday = new Date(monday);
   nextMonday.setDate(monday.getDate() + 7);
 
-  // Graphique semaine précédente
   const dailyNic = prevWeekDays.map(d => getNicotineForDay(d));
   const maxNic = Math.max(...dailyNic, 1);
-
   const risks = getRisks(score);
   const gradeRanges = {
     A: '0 — 50 tox', B: '51 — 100 tox', C: '101 — 200 tox',
@@ -420,19 +405,20 @@ function renderRanking() {
       </div>
     </div>
 
-    <!-- Grade semaine précédente -->
-    ${totalTox === 0 && state.entries.filter(e => prevWeekDays.includes(e.date)).length === 0
-      ? `<div class="card" style="margin-top:12px;text-align:center;padding:24px">
-          <div style="font-size:48px">🔒</div>
-          <div style="font-size:16px;font-weight:700;color:var(--text);margin-top:12px">
+    <!-- Grade ou message "pas encore classé" -->
+    ${hasNoPrevData
+      ? `<div class="card" style="margin-top:12px;text-align:center;padding:28px 20px">
+          <div style="font-size:52px">🏅</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-top:14px">
             Pas encore de classement
           </div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5">
-            Votre premier grade apparaîtra ici lundi prochain après une semaine de suivi.
+          <div style="font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.6">
+            Votre premier grade apparaîtra ici lundi prochain,<br>
+            après une semaine complète de suivi.
           </div>
         </div>`
       : `<div class="card" style="margin-top:12px;background:${scoreColor}18;
-          border:1.5px solid ${scoreColor}40">
+            border:1.5px solid ${scoreColor}40">
           <div style="display:flex;align-items:center;gap:16px">
             <div style="width:80px;height:80px;border-radius:18px;background:${scoreColor};
               display:flex;align-items:center;justify-content:center;
@@ -449,54 +435,53 @@ function renderRanking() {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Risques -->
+        <div style="padding:0 20px;margin-top:20px">
+          <div style="font-size:18px;font-weight:700;margin-bottom:12px">Les risques :</div>
+          ${risks.map(r => `
+            <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+              <div style="width:6px;height:6px;border-radius:50%;background:${scoreColor};
+                flex-shrink:0;margin-top:6px"></div>
+              <div style="font-size:14px;color:#4A4A6A;line-height:1.5">${r}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Graphique -->
+        <div style="padding:0 20px;margin-top:20px">
+          <div style="font-size:18px;font-weight:700;margin-bottom:12px">Consommation de la semaine :</div>
+          <div class="card">
+            <div style="display:flex;align-items:flex-end;justify-content:space-around;height:120px">
+              ${dailyNic.map((v, i) => {
+                const h = maxNic > 0 ? Math.max((v / maxNic * 100), 4) : 4;
+                const c = getNicColor(v);
+                return `
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                    ${v > 0 ? `<div style="font-size:9px;color:${c};font-weight:600">${v.toFixed(1)}</div>` : ''}
+                    <div style="width:28px;height:${h}px;background:${v>0?c:'#E0E0E0'};
+                      border-radius:6px"></div>
+                  </div>`;
+              }).join('')}
+            </div>
+            <div style="display:flex;justify-content:space-around;margin-top:8px">
+              ${prevWeekDays.map(d =>
+                `<div style="font-size:11px;color:var(--text-muted)">
+                  ${new Date(d+'T12:00:00').getDate()}
+                </div>`
+              ).join('')}
+            </div>
+          </div>
         </div>`
     }
 
-      ${totalTox === 0 && state.entries.filter(e => prevWeekDays.includes(e.date)).length === 0 ? '' : `
-      <!-- Risques -->
-      <div style="padding:0 20px;margin-top:20px">
-      <div style="font-size:18px;font-weight:700;margin-bottom:12px">Les risques :</div>
-      ${risks.map(r => `
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
-          <div style="width:6px;height:6px;border-radius:50%;background:${scoreColor};
-            flex-shrink:0;margin-top:6px"></div>
-          <div style="font-size:14px;color:#4A4A6A;line-height:1.5">${r}</div>
-        </div>
-      `).join('')}
-    </div>
-
-    <!-- Graphique -->
-    <div style="padding:0 20px;margin-top:20px">
-      <div style="font-size:18px;font-weight:700;margin-bottom:12px">Consommation de la semaine :</div>
-      <div class="card">
-        <div style="display:flex;align-items:flex-end;justify-content:space-around;height:120px">
-          ${dailyNic.map((v, i) => {
-            const h = maxNic > 0 ? Math.max((v / maxNic * 100), 4) : 4;
-            const c = getNicColor(v);
-            return `
-              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                ${v > 0 ? `<div style="font-size:9px;color:${c};font-weight:600">${v.toFixed(1)}</div>` : ''}
-                <div style="width:28px;height:${h}px;background:${v>0?c:'#E0E0E0'};
-                  border-radius:6px"></div>
-              </div>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;justify-content:space-around;margin-top:8px">
-          ${prevWeekDays.map(d =>
-            `<div style="font-size:11px;color:var(--text-muted)">
-              ${new Date(d+'T12:00:00').getDate()}
-            </div>`
-          ).join('')}
-        </div>
-      </div>
-    </div>
-
-    <!-- Grades -->
+    <!-- Grades (toujours affichés) -->
     <div style="padding:0 20px;margin-top:20px;margin-bottom:32px">
       <div style="font-size:18px;font-weight:700;margin-bottom:12px">Les grades :</div>
       ${['A','B','C','D','E','F'].map(g => {
         const c = getScoreColor(g);
-        const isCurrent = g === score;
+        const isCurrent = !hasNoPrevData && g === score;
         return `
           <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;
             border-radius:12px;margin-bottom:8px;
@@ -602,9 +587,7 @@ function renderProfile() {
   const totalNic = state.entries.reduce((s, e) => s + (e.cigarettes*0.7) + (e.puffMg||0), 0);
   const totalEntries = state.entries.length;
 
-  // Streak
   let streak = 0;
-  const todayStr = today();
   for (let i = 0; i < 365; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -613,7 +596,6 @@ function renderProfile() {
     else if (i > 0) break;
   }
 
-  // Non-fumeur depuis
   const lastEntry = allDays[allDays.length - 1];
   let years = 0, months = 0, days = 0;
   if (lastEntry) {
@@ -628,7 +610,6 @@ function renderProfile() {
       <div class="page-title">Profil</div>
     </div>
 
-    <!-- Bouton abonnement -->
     <div style="margin:16px 20px 0;background:linear-gradient(135deg,#5BB8F5,#FF7043);
       border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer"
       onclick="alert('Abonnements — bientôt !')">
@@ -640,7 +621,6 @@ function renderProfile() {
       <span style="color:rgba(255,255,255,0.7);font-size:18px">›</span>
     </div>
 
-    <!-- Avatar + nom -->
     <div style="display:flex;flex-direction:column;align-items:center;margin-top:24px;gap:10px">
       <div style="width:80px;height:80px;border-radius:40px;background:var(--card-bg);
         display:flex;align-items:center;justify-content:center;font-size:40px">👤</div>
@@ -650,7 +630,6 @@ function renderProfile() {
       </div>
     </div>
 
-    <!-- 3 badges -->
     <div style="display:flex;gap:12px;padding:0 20px;margin-top:20px">
       <div style="flex:1;background:rgba(255,112,67,0.1);border-radius:16px;padding:14px;
         border:1px solid rgba(255,112,67,0.2);text-align:center">
@@ -672,7 +651,6 @@ function renderProfile() {
       </div>
     </div>
 
-    <!-- Non-fumeur depuis -->
     <div class="card" style="margin-top:16px">
       <div style="text-align:center;font-size:14px;font-weight:600;margin-bottom:16px">
         Non-fumeur depuis
