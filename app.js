@@ -421,28 +421,40 @@ function renderRanking() {
     </div>
 
     <!-- Grade semaine précédente -->
-    <div class="card" style="margin-top:12px;background:${scoreColor}18;
-      border:1.5px solid ${scoreColor}40">
-      <div style="display:flex;align-items:center;gap:16px">
-        <div style="width:80px;height:80px;border-radius:18px;background:${scoreColor};
-          display:flex;align-items:center;justify-content:center;
-          box-shadow:0 6px 16px ${scoreColor}60;flex-shrink:0">
-          <span style="font-size:42px;font-weight:700;color:white">${score}</span>
-        </div>
-        <div>
-          <div style="font-size:20px;font-weight:700;color:${scoreColor}">GRADE ${score}</div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">
-            ${totalTox.toFixed(1)} tox cette semaine
+    ${totalTox === 0 && state.entries.filter(e => prevWeekDays.includes(e.date)).length === 0
+      ? `<div class="card" style="margin-top:12px;text-align:center;padding:24px">
+          <div style="font-size:48px">🔒</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-top:12px">
+            Pas encore de classement
           </div>
-          <div style="font-size:13px;color:var(--text);margin-top:4px;line-height:1.4">
-            ${getScoreMsg(score)}
+          <div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5">
+            Votre premier grade apparaîtra ici lundi prochain après une semaine de suivi.
           </div>
-        </div>
-      </div>
-    </div>
+        </div>`
+      : `<div class="card" style="margin-top:12px;background:${scoreColor}18;
+          border:1.5px solid ${scoreColor}40">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:80px;height:80px;border-radius:18px;background:${scoreColor};
+              display:flex;align-items:center;justify-content:center;
+              box-shadow:0 6px 16px ${scoreColor}60;flex-shrink:0">
+              <span style="font-size:42px;font-weight:700;color:white">${score}</span>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:700;color:${scoreColor}">GRADE ${score}</div>
+              <div style="font-size:13px;color:var(--text-muted);margin-top:2px">
+                ${totalTox.toFixed(1)} tox cette semaine
+              </div>
+              <div style="font-size:13px;color:var(--text);margin-top:4px;line-height:1.4">
+                ${getScoreMsg(score)}
+              </div>
+            </div>
+          </div>
+        </div>`
+    }
 
-    <!-- Risques -->
-    <div style="padding:0 20px;margin-top:20px">
+      ${totalTox === 0 && state.entries.filter(e => prevWeekDays.includes(e.date)).length === 0 ? '' : `
+      <!-- Risques -->
+      <div style="padding:0 20px;margin-top:20px">
       <div style="font-size:18px;font-weight:700;margin-bottom:12px">Les risques :</div>
       ${risks.map(r => `
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
