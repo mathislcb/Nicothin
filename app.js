@@ -13,6 +13,7 @@ const state = {
   selectedDay: new Date().toISOString().split('T')[0],
   userName: DB.get('userName', 'Utilisateur'),
   onboardingDone: DB.get('onboardingDone', false),
+  lastSmokeDate: DB.get('lastSmokeDate', null),
   entries: DB.get('entries', []),
 };
 
@@ -77,6 +78,9 @@ function showSplash() {
       showApp();
     } else {
       $('onboarding').classList.add('active');
+      // Pré-rempli la date d'aujourd'hui
+      const input = $('onboarding-last-smoke');
+      if (input) input.value = today();
     }
   }, 2200);
 }
@@ -103,12 +107,20 @@ function nextSlide() {
   if (currentSlide === 3) {
     $('onboarding-next').textContent = 'Commencer';
     $('onboarding-skip').style.display = 'none';
+    // Pré-rempli la date d'aujourd'hui
+    const input = $('onboarding-last-smoke');
+    if (input) input.value = today();
   }
 }
 
 function finishOnboarding() {
-  const name = $('onboarding-name').value.trim();
+  const name = $('onboarding-name')?.value.trim();
   if (name) state.userName = name;
+  const lastSmoke = $('onboarding-last-smoke')?.value;
+  if (lastSmoke) {
+    state.lastSmokeDate = lastSmoke;
+    DB.set('lastSmokeDate', lastSmoke);
+  }
   DB.set('userName', state.userName);
   DB.set('onboardingDone', true);
   state.onboardingDone = true;
@@ -245,8 +257,12 @@ function saveCigarette() {
   const count = parseFloat(slider.value);
   state.entries.push({ id: uid(), date: state.selectedDay, cigarettes: count, puffMg: 0 });
   DB.set('entries', state.entries);
+  // Remet le compteur non-fumeur à la date sélectionnée
+  state.lastSmokeDate = state.selectedDay;
+  DB.set('lastSmokeDate', state.lastSmokeDate);
   closeModal('modal-cig');
   renderHome();
+  renderProfile();
 }
 
 function openAddPuff() {
@@ -294,8 +310,12 @@ function savePuff() {
   const mg = rate * volumePerPuff * consumed;
   state.entries.push({ id: uid(), date: state.selectedDay, cigarettes: 0, puffMg: mg });
   DB.set('entries', state.entries);
+  // Remet le compteur non-fumeur à la date sélectionnée
+  state.lastSmokeDate = state.selectedDay;
+  DB.set('lastSmokeDate', state.lastSmokeDate);
   closeModal('modal-puff');
   renderHome();
+  renderProfile();
 }
 
 function openEditEntries() {
@@ -343,9 +363,17 @@ function deleteEntry(id) {
   if (!confirm('Supprimer cette entrée ?')) return;
   state.entries = state.entries.filter(e => e.id !== id);
   DB.set('entries', state.entries);
+  // Recalcule la dernière date de consommation
+  const allDates = [...state.entries.map(e => e.date)].sort();
+  const lastDate = allDates[allDates.length - 1];
+  if (lastDate) {
+    state.lastSmokeDate = lastDate;
+    DB.set('lastSmokeDate', lastDate);
+  }
   closeModal('modal-edit');
   openEditEntries();
   renderHome();
+  renderProfile();
 }
 
 function closeModal(id) {
@@ -405,7 +433,7 @@ function renderRanking() {
       </div>
     </div>
 
-    <!-- Grade ou message "pas encore classé" -->
+    <!-- Grade ou message pas encore classé -->
     ${hasNoPrevData
       ? `<div class="card" style="margin-top:12px;text-align:center;padding:28px 20px">
           <div style="font-size:52px">🏅</div>
@@ -451,7 +479,9 @@ function renderRanking() {
 
         <!-- Graphique -->
         <div style="padding:0 20px;margin-top:20px">
-          <div style="font-size:18px;font-weight:700;margin-bottom:12px">Consommation de la semaine :</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:12px">
+            Consommation de la semaine :
+          </div>
           <div class="card">
             <div style="display:flex;align-items:flex-end;justify-content:space-around;height:120px">
               ${dailyNic.map((v, i) => {
@@ -476,7 +506,7 @@ function renderRanking() {
         </div>`
     }
 
-    <!-- Grades (toujours affichés) -->
+    <!-- Grades toujours affichés -->
     <div style="padding:0 20px;margin-top:20px;margin-bottom:32px">
       <div style="font-size:18px;font-weight:700;margin-bottom:12px">Les grades :</div>
       ${['A','B','C','D','E','F'].map(g => {
@@ -583,7 +613,6 @@ function getRisks(score) {
 
 // ===== PROFILE SCREEN =====
 function renderProfile() {
-  const allDays = [...new Set(state.entries.map(e => e.date))].sort();
   const totalNic = state.entries.reduce((s, e) => s + (e.cigarettes*0.7) + (e.puffMg||0), 0);
   const totalEntries = state.entries.length;
 
@@ -596,10 +625,12 @@ function renderProfile() {
     else if (i > 0) break;
   }
 
-  const lastEntry = allDays[allDays.length - 1];
+  // Non-fumeur depuis — basé sur lastSmokeDate
   let years = 0, months = 0, days = 0;
-  if (lastEntry) {
-    const diff = Math.floor((new Date() - new Date(lastEntry + 'T12:00:00')) / 86400000);
+  if (state.lastSmokeDate) {
+    const diff = Math.floor(
+      (new Date() - new Date(state.lastSmokeDate + 'T12:00:00')) / 86400000
+    );
     years = Math.floor(diff / 365);
     months = Math.floor((diff % 365) / 30);
     days = diff % 30;
@@ -655,26 +686,73 @@ function renderProfile() {
       <div style="text-align:center;font-size:14px;font-weight:600;margin-bottom:16px">
         Non-fumeur depuis
       </div>
-      <div style="display:flex;justify-content:space-evenly;align-items:center">
-        <div style="text-align:center">
-          <div style="font-size:28px;font-weight:700">${String(years).padStart(2,'0')}</div>
-          <div style="font-size:11px;color:var(--text-muted)">Années</div>
-        </div>
-        <div style="width:1px;height:40px;background:#B0BEC5"></div>
-        <div style="text-align:center">
-          <div style="font-size:28px;font-weight:700">${String(months).padStart(2,'0')}</div>
-          <div style="font-size:11px;color:var(--text-muted)">Mois</div>
-        </div>
-        <div style="width:1px;height:40px;background:#B0BEC5"></div>
-        <div style="text-align:center">
-          <div style="font-size:28px;font-weight:700">${String(days).padStart(2,'0')}</div>
-          <div style="font-size:11px;color:var(--text-muted)">Jours</div>
-        </div>
-      </div>
+      ${state.lastSmokeDate
+        ? `<div style="display:flex;justify-content:space-evenly;align-items:center">
+            <div style="text-align:center">
+              <div style="font-size:28px;font-weight:700">${String(years).padStart(2,'0')}</div>
+              <div style="font-size:11px;color:var(--text-muted)">Années</div>
+            </div>
+            <div style="width:1px;height:40px;background:#B0BEC5"></div>
+            <div style="text-align:center">
+              <div style="font-size:28px;font-weight:700">${String(months).padStart(2,'0')}</div>
+              <div style="font-size:11px;color:var(--text-muted)">Mois</div>
+            </div>
+            <div style="width:1px;height:40px;background:#B0BEC5"></div>
+            <div style="text-align:center">
+              <div style="font-size:28px;font-weight:700">${String(days).padStart(2,'0')}</div>
+              <div style="font-size:11px;color:var(--text-muted)">Jours</div>
+            </div>
+          </div>`
+        : `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:10px 0">
+            Renseignez votre date de dernière consommation pour voir ce compteur.
+          </div>`
+      }
+    </div>
+
+    <!-- Modifier la date dernière cigarette -->
+    <div style="margin:12px 20px 0">
+      <button onclick="editLastSmoke()"
+        style="width:100%;padding:14px;background:var(--card-bg);border:none;
+        border-radius:14px;font-family:inherit;font-size:13px;font-weight:600;
+        color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px">
+        <span>📅</span>
+        <span>Modifier la date de dernière consommation</span>
+      </button>
     </div>
 
     <div style="height:32px"></div>
   `;
+}
+
+function editLastSmoke() {
+  const current = state.lastSmokeDate || today();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-overlay active" id="modal-smoke-date">
+      <div class="modal">
+        <div class="modal-title">Dernière consommation</div>
+        <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:16px">
+          Quand avez-vous fumé pour la dernière fois ?
+        </div>
+        <input type="date" id="smoke-date-input" class="name-input"
+          value="${current}" max="${today()}"
+          style="width:100%;text-align:center">
+        <div class="modal-btns" style="margin-top:16px">
+          <button class="btn-cancel" onclick="closeModal('modal-smoke-date')">ANNULER</button>
+          <button class="btn-validate" onclick="saveLastSmoke()">VALIDER</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function saveLastSmoke() {
+  const val = $('smoke-date-input').value;
+  if (val) {
+    state.lastSmokeDate = val;
+    DB.set('lastSmokeDate', val);
+  }
+  closeModal('modal-smoke-date');
+  renderProfile();
 }
 
 function editName() {

@@ -65,11 +65,15 @@
           <h2>Comment vous appelez-vous ?</h2>
           <p>Votre prénom apparaîtra sur votre profil.</p>
           <input type="text" id="onboarding-name" placeholder="Votre prénom" class="name-input">
+          <p style="margin-top:20px;font-size:14px;color:#9E9E9E">
+            Quand avez-vous fumé pour la dernière fois ?
+          </p>
+          <input type="date" id="onboarding-last-smoke" class="name-input"
+            style="margin-top:8px;cursor:pointer">
         </div>
 
       </div>
 
-      <!-- Indicateurs -->
       <div class="slide-dots">
         <span class="dot active"></span>
         <span class="dot"></span>
@@ -84,13 +88,10 @@
 
   <!-- App principale -->
   <div id="app" class="screen">
-
-    <!-- Contenu des écrans -->
     <div id="screen-home" class="app-screen active"></div>
     <div id="screen-ranking" class="app-screen"></div>
     <div id="screen-profile" class="app-screen"></div>
 
-    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
       <button class="nav-btn active" data-screen="home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
